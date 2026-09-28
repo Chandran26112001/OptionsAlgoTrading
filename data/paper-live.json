@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "mode": "live",
+  "initialPaise": 100000000,
+  "cashPaise": 93500000,
+  "realizedPaise": 0,
+  "feesPaise": 0,
+  "positions": {
+    "NSE_FO|40717": {
+      "contract": {
+        "instrument_key": "NSE_FO|40717",
+        "trading_symbol": "NIFTY 22850 CE 06 OCT 26",
+        "name": "NIFTY",
+        "instrument_type": "CE",
+        "underlying_key": "NSE_INDEX|Nifty 50",
+        "exchange": "NSE",
+        "expiry": "2026-10-06",
+        "strike_price": 22850,
+        "lot_size": 65,
+        "tick_size": 5
+      },
+      "qty": 325,
+      "costPaise": 6500000
+    }
+  },
+  "orders": [
+    {
+      "id": "15b8c1c8-e324-4be7-85a6-9ac0d8172160",
+      "contract": {
+        "instrument_key": "NSE_FO|40717",
+        "trading_symbol": "NIFTY 22850 CE 06 OCT 26",
+        "name": "NIFTY",
+        "instrument_type": "CE",
+        "underlying_key": "NSE_INDEX|Nifty 50",
+        "exchange": "NSE",
+        "expiry": "2026-10-06",
+        "strike_price": 22850,
+        "lot_size": 65,
+        "tick_size": 5
+      },
+      "side": "BUY",
+      "kind": "MARKET",
+      "qty": 325,
+      "limitPaise": 0,
+      "fillPaise": 20000,
+      "feePaise": 0,
+      "status": "FILLED",
+      "created": "2026-09-28T14:08:36.0571499+05:30",
+      "filled": "2026-09-28T14:08:36.1294097+05:30"
+    }
+  ]
+}

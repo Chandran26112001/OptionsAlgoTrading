@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "mode": "demo",
+  "initialPaise": 100000000,
+  "cashPaise": 94563625,
+  "realizedPaise": 13125,
+  "feesPaise": 0,
+  "positions": {
+    "NSE_FO|DEMO_NIFTY_2026-10-12_25050_CE": {
+      "contract": {
+        "instrument_key": "NSE_FO|DEMO_NIFTY_2026-10-12_25050_CE",
+        "trading_symbol": "NIFTY 25050 CE",
+        "name": "",
+        "instrument_type": "CE",
+        "underlying_key": "NSE_INDEX|Nifty 50",
+        "exchange": "NSE",
+        "expiry": "2026-10-12",
+        "strike_price": 25050,
+        "lot_size": 75,
+        "tick_size": 5
+      },
+      "qty": 450,
+      "costPaise": 5449500
+    }
+  },
+  "orders": [
+    {
+      "id": "62f86f63-aac7-4ae4-94da-dba755976460",
+      "contract": {
+        "instrument_key": "NSE_FO|DEMO_NIFTY_2026-10-05_25050_CE",
+        "trading_symbol": "NIFTY 25050 CE",
+        "name": "",
+        "instrument_type": "CE",
+        "underlying_key": "NSE_INDEX|Nifty 50",
+        "exchange": "NSE",
+        "expiry": "2026-10-05",
+        "strike_price": 25050,
+        "lot_size": 75,
+        "tick_size": 5
+      },
+      "side": "BUY",
+      "kind": "MARKET",
+      "qty": 75,
+      "limitPaise": 0,
+      "fillPaise": 12320,
+      "feePaise": 0,
+      "status": "FILLED",
+      "created": "2026-09-28T12:16:44.6171026+05:30",
+      "filled": "2026-09-28T12:16:44.6222949+05:30"
+    },
+    {
+      "id": "7480ea6e-0728-43ee-b3b0-fec8e4922b9d",
+      "contract": {
+        "instrument_key": "NSE_FO|DEMO_NIFTY_2026-10-05_25050_CE",
+        "trading_symbol": "NIFTY 25050 CE",
+        "name": "",
+        "instrument_type": "CE",
+        "underlying_key": "NSE_INDEX|Nifty 50",
+        "exchange": "NSE",
+        "expiry": "2026-10-05",
+        "strike_price": 25050,
+        "lot_size": 75,
+        "tick_size": 5
+      },
+      "side": "SELL",
+      "kind": "MARKET",
+      "qty": 75,
+      "limitPaise": 0,
+      "fillPaise": 12495,
+      "feePaise": 0,
+      "status": "FILLED",
+      "created": "2026-09-28T12:35:47.932626+05:30",
+      "filled": "2026-09-28T12:35:47.933684+05:30"
+    },
+    {
+      "id": "8559d512-7c0f-41fc-975c-22a911c43ae2",
+      "contract": {
+        "instrument_key": "NSE_FO|DEMO_NIFTY_2026-10-12_25050_CE",
+        "trading_symbol": "NIFTY 25050 CE",
+        "name": "",
+        "instrument_type": "CE",
+        "underlying_key": "NSE_INDEX|Nifty 50",
+        "exchange": "NSE",
+        "expiry": "2026-10-12",
+        "strike_price": 25050,
+        "lot_size": 75,
+        "tick_size": 5
+      },
+      "side": "BUY",
+      "kind": "MARKET",
+      "qty": 450,
+      "limitPaise": 0,
+      "fillPaise": 12110,
+      "feePaise": 0,
+      "status": "FILLED",
+      "created": "2026-09-28T12:37:55.7747741+05:30",
+      "filled": "2026-09-28T12:37:55.7773729+05:30"
+    }
+  ]
+}
