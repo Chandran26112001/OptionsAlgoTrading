@@ -26,3 +26,5 @@ go.work.sum
 
 # node modules
 frontend/node_modules/
+
+data/
