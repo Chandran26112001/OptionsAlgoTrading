@@ -69,7 +69,35 @@ Run it from this project directory so it reads the intended `.env` and `data/` p
 - Positions, average cost, realized/unrealized/net P&L, cash, equity, reserved buying power and order history. P&L is marked using LTP, not liquidation bid/ask; stale/missing marks are labelled and use the last mark or average entry cost.
 - CSV export, clear error states, mobile layouts, server-side credentials and separate live-data/demo persistence.
 
-## Configuration
+## Algorithm dashboard
+
+Open **Algo dashboard** in the sidebar. Choose an underlying, expiry and option; custom stock underlyings can first be selected on the trading desk. This view only reads market data and never submits or modifies paper orders. The final call is deliberately **WAIT — rules not configured** until entry conditions are supplied.
+
+- OI sums CE and PE separately over ATM plus seven strikes on each side (15 strikes). IV averages CE and PE separately over ATM plus four on each side (9 strikes). Both use the selected expiry. ATM is nearest to spot; an exact tie selects the lower strike. The IV badge highlights an absolute CE/PE gap **strictly greater than 2 percentage points**, not a relative 2% change. Incomplete ranges or missing values are withheld.
+- India VIX (`NSE_INDEX|India VIX`) and US 30 Dow futures (`GLOBAL_INDEX|DOW FUTURES`) compare the current quote with the close of the minute candle starting five minutes before the quote's minute. Both provider and comparison timestamps are shown. Upstox's public global catalogue identifies US 30 separately from the cash Dow Jones index and lists a 20-second data refresh interval. Missing comparison candles are not replaced with another index or fabricated data.
+- Technical indicators default to the **underlying**, using completed one-minute candles from the current IST date. EMA is seeded with the period's simple average; Supertrend uses Wilder ATR, seeded with average true range; Parabolic SAR uses Wilder acceleration and initial direction from the first two closes. VWAP is cumulative `(high + low + close) / 3 × volume / total volume`. Index candles may have zero volume, in which case VWAP is unavailable. No futures or ETF proxy is silently used. Indicators warm up again each session and can differ from platforms using previous-day history or different seeds.
+- Refresh defaults to 15 seconds. Quotes beyond the configured age have no trend; old technical values are labelled historical. Failed browser refreshes retain a clearly marked previous snapshot. The chain API has no exchange timestamp: its timestamp is labelled **received**, not exchange-verified freshness. Directions and price/indicator relationships are descriptive, with no buy/sell rules applied.
+
+Settings are in root `.env` and `.env.example`; restart the backend after editing. Invalid settings fail startup. `ALGO_INDICATOR_TARGET=option` changes all four technical indicators to the selected verified option without a code change.
+
+| Variable | Default | Meaning / allowed range |
+|---|---|---|
+| `ALGO_OI_STRIKES_EACH_SIDE` | `7` | Strikes above/below ATM, 1–50; ATM included |
+| `ALGO_IV_STRIKES_EACH_SIDE` | `4` | Strikes above/below ATM, 1–50; ATM included |
+| `ALGO_IV_DIFFERENCE_THRESHOLD` | `2` | Absolute IV gap in percentage points, 0–100 |
+| `ALGO_TREND_LOOKBACK_MINUTES` | `5` | VIX and Dow comparison, 1–60 minutes |
+| `ALGO_EMA_PERIOD` | `20` | Completed one-minute candles, 2–300 |
+| `ALGO_SUPERTREND_ATR_PERIOD` | `10` | Wilder ATR period, 2–100 |
+| `ALGO_SUPERTREND_MULTIPLIER` | `3` | ATR multiplier, 0.1–20 |
+| `ALGO_SAR_STEP` | `0.02` | Acceleration step, 0.001–1; no greater than max |
+| `ALGO_SAR_MAX` | `0.2` | Maximum acceleration, 0.001–1 |
+| `ALGO_INDICATOR_TARGET` | `underlying` | `underlying` or `option` |
+| `ALGO_MAX_DATA_AGE_SECONDS` | `180` | Snapshot/quote/candle age limit, 60–900 seconds |
+| `ALGO_REFRESH_SECONDS` | `15` | Dashboard refresh, 15–300 seconds |
+
+Local endpoint: `GET /api/algo?underlying=...&expiry=YYYY-MM-DD&option=...`. Contract ownership and expiry are verified against provider metadata. It reuses the existing allowlisted market-data endpoints; only the exact display-only US 30 key is additionally accepted for candle reads. The order instrument validator still rejects global indices. Source: [Upstox global instrument support](https://upstox.com/developer/api-documentation/announcements/global-instruments/).
+
+## General configuration
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -119,7 +147,7 @@ Known simulation limits:
 - No stop/stop-limit orders, multi-leg atomic baskets, backtesting or tick-level streaming in this first version.
 - Live fills require `NORMAL_OPEN` and provider timestamps less than 15 seconds old. Missing timestamps are not replaced by local receipt times. Provider errors and rate limits fail closed; HTTP 429 causes a shared 30-second cooldown.
 - Contract metadata is cached for five minutes, exchange status for 15 seconds, chains for three seconds. Quotes used for execution bypass caches. All browser labels distinguish connection status, stale quotes and explicit synthetic demo data.
-- Token expiry/permissions and real provider latency can only be verified after a valid token is configured. Live Upstox access was **not authenticated during development**.
+- Live Upstox quotes, option chains and intraday candles were authenticated and verified on 30 September 2026 during algorithm-dashboard development. Token expiry and future provider availability still depend on the configured token and permissions.
 
 ## Development and validation
 

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Activity, ArrowDownLeft, ArrowUpRight, BarChart3, BookOpen, Check, ChevronDown, ChevronRight, CircleHelp, Download, Layers, LayoutDashboard, ListOrdered, Search, Settings2, ShieldCheck, Wallet, X, Zap, RefreshCw, ExternalLink, TrendingUp } from '@lucide/svelte';
   import PriceChart from './PriceChart.svelte';
+  import AlgoDashboard from './AlgoDashboard.svelte';
 
   let config = { mode: 'live', connected: false, pollSeconds: 3, marginPerLot: 150000, feePerOrder: 0 };
   let account = { initial: 1000000, cash: 1000000, equity: 1000000, buyingPower: 1000000, realized: 0, unrealized: 0, totalPnL: 0, fees: 0, margin: 0, reserved: 0, positions: [], orders: [], marksFresh: true };
@@ -38,7 +39,7 @@
   $: callOI = rows.reduce((n, r) => n + (r.call_options?.market_data?.oi || 0), 0);
   $: putOI = rows.reduce((n, r) => n + (r.put_options?.market_data?.oi || 0), 0);
   $: pending = account.orders.filter(o => o.status === 'PENDING').length;
-  $: heading = page === 'desk' ? 'Your edge starts with practice.' : page === 'positions' ? 'A clear view of your exposure.' : 'Every decision, on the record.';
+  $: heading = page === 'algo' ? 'A little more clarity. A better decision.' : page === 'desk' ? 'Your edge starts with practice.' : page === 'positions' ? 'A clear view of your exposure.' : 'Every decision, on the record.';
   $: chartKey = chartTarget === 'option' && selected ? selected.instrument_key : underlying;
 
   async function loadAccount() {
@@ -127,7 +128,7 @@
   });
 </script>
 
-<svelte:head><title>Optiondesk · {page === 'desk' ? 'Trading desk' : page === 'positions' ? 'Positions' : 'Order book'}</title></svelte:head>
+<svelte:head><title>Optiondesk · {page === 'algo' ? 'Algo dashboard' : page === 'desk' ? 'Trading desk' : page === 'positions' ? 'Positions' : 'Order book'}</title></svelte:head>
 
 <div class="app-shell">
   <aside class="sidebar">
@@ -135,6 +136,7 @@
     <div class="workspace-label">YOUR WORKSPACE</div>
     <nav aria-label="Main navigation">
       <button class:active={page === 'desk'} onclick={() => page = 'desk'}><LayoutDashboard size={18}/> Trading desk</button>
+      <button class:active={page === 'algo'} onclick={() => page = 'algo'}><Activity size={18}/> Algo dashboard</button>
       <button class:active={page === 'positions'} onclick={() => page = 'positions'}><Layers size={18}/> Positions <span class="nav-count">{account.positions.length}</span></button>
       <button class:active={page === 'orders'} onclick={() => page = 'orders'}><ListOrdered size={18}/> Order book {#if pending}<span class="nav-count">{pending}</span>{/if}</button>
     </nav>
@@ -143,18 +145,20 @@
   </aside>
 
   <div class="workspace">
-    <header class="topbar"><div class="breadcrumb">Workspace <ChevronRight size={13}/> <strong>{page === 'desk' ? 'Trading desk' : page === 'positions' ? 'Positions' : 'Order book'}</strong></div><div class="topbar-right"><span class="paper-badge"><span></span> Paper account</span><span class="topbar-divider"></span><span class="clock">{new Date(clock).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} <small>IST</small></span><button class="avatar" onclick={() => settings = true} aria-label="Account settings">PT</button></div></header>
+    <header class="topbar"><div class="breadcrumb">Workspace <ChevronRight size={13}/> <strong>{page === 'algo' ? 'Algo dashboard' : page === 'desk' ? 'Trading desk' : page === 'positions' ? 'Positions' : 'Order book'}</strong></div><div class="topbar-right"><span class="paper-badge"><span></span> Paper account</span><span class="topbar-divider"></span><span class="clock">{new Date(clock).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} <small>IST</small></span><button class="avatar" onclick={() => settings = true} aria-label="Account settings">PT</button></div></header>
     <main>
       <div class="page-heading"><div><div class="eyebrow">THE OPTIONS WORKSPACE</div><h1>{heading}</h1><p>Indian options. Live perspective. Zero capital at risk.</p></div><div class:demo={config.mode === 'demo'} class="connection"><span class:connected={config.connected && chainFresh}></span>{config.mode === 'demo' ? 'DEMO · synthetic data' : !config.connected ? 'Data not connected' : chainFresh ? 'Upstox · live polling' : 'Waiting for data'}</div></div>
       {#if config.mode === 'demo'}<div class="banner demo-banner"><Zap size={16}/><span><strong>Demo workspace</strong> — all prices and charts are synthetic. Your live-data paper account is stored separately.</span></div>{/if}
       {#if error || accountError || account.feedError}<div class="banner"><Activity size={17}/><span>{accountError || error || account.feedError}</span>{#if !config.connected}<button onclick={() => settings = true}>Connect data <ArrowUpRight size={14}/></button>{:else}<button onclick={() => !expiry ? loadMarket() : refresh()}>Retry <RefreshCw size={13}/></button>{/if}</div>{/if}
-      <section class="metrics" aria-label="Account summary">
+      {#if page !== 'algo'}<section class="metrics" aria-label="Account summary">
         <div class="metric"><div class="metric-label">Portfolio value <Wallet size={15}/></div><strong>{currency(account.equity)}</strong><small>Started with {currency(account.initial, 0)}</small></div>
         <div class="metric"><div class="metric-label">Total P&L <TrendingUp size={15}/></div><strong class:positive={account.totalPnL >= 0} class:negative={account.totalPnL < 0}>{account.totalPnL >= 0 ? '+' : ''}{currency(account.totalPnL)}</strong><small><span class:positive={account.totalPnL >= 0} class:negative={account.totalPnL < 0}>{account.totalPnL >= 0 ? '+' : ''}{number(account.totalPnL / account.initial * 100)}%</span> all time{!account.marksFresh ? ' · stale marks' : ''}</small></div>
         <div class="metric"><div class="metric-label">Available to trade <ArrowUpRight size={15}/></div><strong>{currency(account.buyingPower)}</strong><small>{currency(account.margin + account.reserved, 0)} reserved</small></div>
         <div class="metric"><div class="metric-label">Open positions <Layers size={15}/></div><strong>{String(account.positions.length).padStart(2, '0')} <span class="metric-unit">positions</span></strong><small>Unrealized <span class:positive={account.unrealized >= 0} class:negative={account.unrealized < 0}>{currency(account.unrealized)}</span></small></div>
       </section>
 
+      {/if}
+      {#if page === 'algo'}<AlgoDashboard {underlying} {underlyingName} {expiry} {selectedKey} {contracts} {expiries} {chooseUnderlying} changeExpiry={value => { expiry = value; changeExpiry(); }} {selectLeg}/>{/if}
       {#if page === 'desk'}
       <div class="desk-layout">
         <div class="market-column">
@@ -191,7 +195,7 @@
       </div>
       {/if}
 
-      <section class="panel portfolio-panel"><div class="portfolio-header"><div class="portfolio-tabs"><button class:chosen={page === 'positions' || (page === 'desk' && tableTab === 'positions')} onclick={() => {tableTab = 'positions'; if (page !== 'desk') page = 'positions';}}>Positions <span>{account.positions.length}</span></button><button class:chosen={page === 'orders' || (page === 'desk' && tableTab === 'orders')} onclick={() => {tableTab = 'orders'; if (page !== 'desk') page = 'orders';}}>Orders <span>{account.orders.length}</span></button></div><a class="export-link" href="/api/export" download><Download size={14}/> Export CSV</a></div>
+      {#if page !== 'algo'}<section class="panel portfolio-panel"><div class="portfolio-header"><div class="portfolio-tabs"><button class:chosen={page === 'positions' || (page === 'desk' && tableTab === 'positions')} onclick={() => {tableTab = 'positions'; if (page !== 'desk') page = 'positions';}}>Positions <span>{account.positions.length}</span></button><button class:chosen={page === 'orders' || (page === 'desk' && tableTab === 'orders')} onclick={() => {tableTab = 'orders'; if (page !== 'desk') page = 'orders';}}>Orders <span>{account.orders.length}</span></button></div><a class="export-link" href="/api/export" download><Download size={14}/> Export CSV</a></div>
         {#if page === 'positions' || (page === 'desk' && tableTab === 'positions')}
           <div class="table-scroll"><table class="positions-table"><thead><tr><th>CONTRACT</th><th>QTY</th><th>AVG. PRICE</th><th>LTP</th><th>UNREALIZED P&L</th><th></th></tr></thead><tbody>{#each account.positions as p}<tr><td><strong>{p.contract.trading_symbol}</strong><small>{dateLabel(p.contract.expiry)} · {p.qty > 0 ? 'LONG' : 'SHORT'}{p.expired ? ' · EXPIRED / unsettled' : ''}</small></td><td>{p.qty}</td><td>{currency(p.average)}</td><td>{currency(p.mark)}{#if p.stale}<small class="stale-label">Stale / indicative</small>{/if}</td><td class:positive={p.pnl >= 0} class:negative={p.pnl < 0}>{p.pnl >= 0 ? '+' : ''}{currency(p.pnl)}</td><td><button class="exit-button" disabled={busy || p.expired} onclick={() => exitPosition(p)}>Exit <ArrowUpRight size={12}/></button></td></tr>{/each}</tbody></table></div>
           {#if !account.positions.length}<div class="empty-state positions-empty"><span class="empty-circle"><Layers size={22} strokeWidth={1.3}/></span><strong>A fresh slate. A world of possibilities.</strong><p>Your open paper positions will appear here. Start with a contract from the option chain.</p></div>{/if}
@@ -201,6 +205,7 @@
         {/if}
         <div class="portfolio-footer"><span>Realized P&L <strong class:positive={account.realized >= 0} class:negative={account.realized < 0}>{currency(account.realized)}</strong></span><span>Simulated fees <strong>{currency(account.fees)}</strong></span><span class="storage-note"><ShieldCheck size={12}/> Saved locally</span></div>
       </section>
+      {/if}
       <footer class="page-footer"><span>OPTIONDESK <span class="footer-dot">·</span> Built for deliberate practice.</span><span>Paper fills exclude taxes, slippage and settlement. {config.mode === 'demo' ? 'Synthetic demo data.' : 'Market snapshots refresh every ' + config.pollSeconds + ' seconds.'}</span></footer>
     </main>
   </div>

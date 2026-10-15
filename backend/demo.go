@@ -80,6 +80,12 @@ func (d Demo) Chain(ctx context.Context, key, expiry string) ([]ChainRow, error)
 }
 func (d Demo) Quotes(ctx context.Context, keys []string) (map[string]Quote, error) {
 	out := map[string]Quote{}
+	for _, key := range keys {
+		if key == vixKey || key == dowKey {
+			cs, _ := d.Candles(ctx, key)
+			out[key] = Quote{Key: key, LTP: cs[len(cs)-1].Close, At: time.Now()}
+		}
+	}
 	for _, under := range []string{"NSE_INDEX|Nifty 50", "NSE_INDEX|Nifty Bank", "BSE_INDEX|SENSEX"} {
 		cs, _ := d.Contracts(ctx, under)
 		base := 25000.0
@@ -115,12 +121,32 @@ func (Demo) Candles(_ context.Context, key string) ([]Candle, error) {
 	if strings.Contains(key, "DEMO") {
 		base = 160
 	}
+	if key == dowKey {
+		base = 51000
+	}
+	if key == vixKey {
+		base = 14
+	}
 	out := []Candle{}
 	end := time.Now().Truncate(time.Minute).Unix()
 	prev := base - 60
 	for i := 0; i < 180; i++ {
 		close := base - 60 + float64(i)*.55 + math.Sin(float64(i)/9)*18 + math.Sin(float64(i)*1.7)*4
-		out = append(out, Candle{end - int64(179-i)*60, prev, math.Max(prev, close) + 3, math.Min(prev, close) - 4, close})
+		if key == vixKey {
+			close = base + math.Sin(float64(i)/9)*.2
+			if i == 0 {
+				prev = close
+			}
+		}
+		wiggle := 3.0
+		if key == vixKey {
+			wiggle = .02
+		}
+		volume := float64(1000 + i*17)
+		if strings.Contains(key, "INDEX|") {
+			volume = 0
+		}
+		out = append(out, Candle{Time: end - int64(179-i)*60, Open: prev, High: math.Max(prev, close) + wiggle, Low: math.Min(prev, close) - wiggle, Close: close, Volume: volume})
 		prev = close
 	}
 	return out, nil

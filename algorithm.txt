@@ -1,0 +1,5 @@
+* Add 7 above and 7 below of ATM (at the money) Open Interest of selected option and compare the two values and show indicator which is greater
+* India VIX - see the trend (inversely proportional - compared with current value and before 5 mins)
+* DOW Jones Future - see the trend (should go down - compared with current value and before 5 mins)
+* Average 4 above and 4 below of ATM IV and show indicator when diff is more than 2.
+* vwap, supertrend, parabolic sar, 20 EMA

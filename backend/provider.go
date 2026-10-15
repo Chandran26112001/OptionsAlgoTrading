@@ -29,14 +29,32 @@ type Contract struct {
 	Tick       float64 `json:"tick_size"`
 }
 type MarketData struct {
-	LTP    float64 `json:"ltp"`
-	Bid    float64 `json:"bid_price"`
-	Ask    float64 `json:"ask_price"`
-	OI     float64 `json:"oi"`
-	PrevOI float64 `json:"prev_oi"`
-	Volume int64   `json:"volume"`
-	Close  float64 `json:"close_price"`
+	MissingOI bool    `json:"-"`
+	LTP       float64 `json:"ltp"`
+	Bid       float64 `json:"bid_price"`
+	Ask       float64 `json:"ask_price"`
+	OI        float64 `json:"oi"`
+	PrevOI    float64 `json:"prev_oi"`
+	Volume    int64   `json:"volume"`
+	Close     float64 `json:"close_price"`
 }
+
+func (m *MarketData) UnmarshalJSON(b []byte) error {
+	type plain MarketData
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil {
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(b, &fields); err != nil {
+		return err
+	}
+	*m = MarketData(p)
+	v, ok := fields["oi"]
+	m.MissingOI = !ok || string(v) == "null"
+	return nil
+}
+
 type Greeks struct {
 	Delta float64 `json:"delta"`
 	Gamma float64 `json:"gamma"`
@@ -49,6 +67,17 @@ type Leg struct {
 	Market MarketData `json:"market_data"`
 	Greeks Greeks     `json:"option_greeks"`
 }
+
+func (l *Leg) UnmarshalJSON(b []byte) error {
+	type plain Leg
+	p := plain{Market: MarketData{MissingOI: true}}
+	if err := json.Unmarshal(b, &p); err != nil {
+		return err
+	}
+	*l = Leg(p)
+	return nil
+}
+
 type ChainRow struct {
 	Strike float64 `json:"strike_price"`
 	Spot   float64 `json:"underlying_spot_price"`
@@ -65,11 +94,13 @@ type Quote struct {
 	At     time.Time `json:"at"`
 }
 type Candle struct {
-	Time  int64   `json:"time"`
-	Open  float64 `json:"open"`
-	High  float64 `json:"high"`
-	Low   float64 `json:"low"`
-	Close float64 `json:"close"`
+	MissingVolume bool    `json:"-"`
+	Time          int64   `json:"time"`
+	Open          float64 `json:"open"`
+	High          float64 `json:"high"`
+	Low           float64 `json:"low"`
+	Close         float64 `json:"close"`
+	Volume        float64 `json:"volume"`
 }
 type Provider interface {
 	Contracts(context.Context, string) ([]Contract, error)
@@ -103,7 +134,7 @@ func allowedPath(p string) bool {
 	}
 	if strings.HasPrefix(p, "/v3/historical-candle/intraday/") && strings.HasSuffix(p, "/minutes/1") {
 		middle := strings.TrimSuffix(strings.TrimPrefix(p, "/v3/historical-candle/intraday/"), "/minutes/1")
-		return validKey(middle)
+		return validMarketKey(middle)
 	}
 	return false
 }
@@ -117,6 +148,11 @@ func validKey(k string) bool {
 		}
 	}
 	return false
+}
+
+// Global indices are display-only. Do not broaden the tradable instrument validator.
+func validMarketKey(k string) bool {
+	return validKey(k) || k == "GLOBAL_INDEX|DOW FUTURES"
 }
 func (u *Upstox) get(ctx context.Context, p string, q url.Values, ttl time.Duration, out any) error {
 	if !allowedPath(p) {
@@ -280,16 +316,20 @@ func (u *Upstox) Candles(ctx context.Context, key string) ([]Candle, error) {
 			continue
 		}
 		t := parseTimestamp(r[0])
-		var o, h, l, c float64
+		var o, h, l, c, volume float64
 		_ = json.Unmarshal(r[1], &o)
 		_ = json.Unmarshal(r[2], &h)
 		_ = json.Unmarshal(r[3], &l)
 		_ = json.Unmarshal(r[4], &c)
+		missingVolume := len(r) <= 5
+		if !missingVolume {
+			missingVolume = string(r[5]) == "null" || json.Unmarshal(r[5], &volume) != nil
+		}
 		if t.IsZero() || seen[t.Unix()] || c <= 0 {
 			continue
 		}
 		seen[t.Unix()] = true
-		out = append(out, Candle{t.Unix(), o, h, l, c})
+		out = append(out, Candle{Time: t.Unix(), Open: o, High: h, Low: l, Close: c, Volume: volume, MissingVolume: missingVolume})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Time < out[j].Time })
 	return out, nil

@@ -27,6 +27,18 @@ The chart is drawn by TradingView's Lightweight Charts library. TradingView supp
 - Focus the chain around the at-the-money strike or show all strikes.
 - View an interactive one-minute candlestick chart for an underlying or a selected option. Pan and zoom the chart.
 
+### Observe an algorithm setup
+
+The **Algo dashboard** sidebar view gathers the inputs in `algorithm.txt`. Select an underlying, expiry and option, then compare CE and PE open interest around ATM (seven strikes on each side plus ATM) and average IV (four on each side plus ATM). It identifies the larger side and highlights an absolute IV difference greater than two percentage points. The selected option does not move ATM: ATM follows the underlying spot price.
+
+India VIX and **US 30 Dow futures** show the latest Upstox quote, a five-minute comparison candle, the change, and their source times. US 30 uses the verified `GLOBAL_INDEX|DOW FUTURES` instrument rather than the cash Dow Jones index. These are periodic snapshots.
+
+VWAP, EMA 20, Supertrend and Parabolic SAR currently use completed one-minute **underlying** candles from the current session. All algorithm numbers, the refresh interval and the indicator target are configurable in `.env`. Change `ALGO_INDICATOR_TARGET` to `option` to calculate all four indicators on the selected option instead. Restart after configuration changes. README documents the calculation conventions and warm-up periods.
+
+An index has no traded volume of its own; the tested NIFTY candles supplied zero volume. Its VWAP therefore shows unavailable, while the other indicators can still appear. Missing inputs, incomplete strike ranges, insufficient history, candle gaps and stale data are disclosed. There is no synthetic fallback in live mode.
+
+The final call stays **WAIT — rules not configured** because entry rules have not yet been provided. Indicator direction is descriptive. The dashboard does not place trades, change cash, register positions or modify the ledger.
+
 ### Practise orders
 
 - Choose an option, buy or sell it, and enter a whole number of lots.
@@ -67,3 +79,7 @@ By default, market quotes and the option chain are requested every **three secon
 The current implementation uses a Svelte frontend, Go backend and Upstox market-data client. To run the app or find detailed configuration, see [README.md](README.md). For development rules and validation commands, see [AGENTS.md](AGENTS.md).
 
 When adding, changing or removing a user-visible feature, update this guide in plain language as part of the same change. Keep the market-data source for live and demo modes distinct, and explain new simulation assumptions where users could mistake them for broker behaviour.
+
+### Latest verification — 30 September 2026
+
+Backend tests and vet passed, including exact indicator examples, ATM-range aggregation, missing OI/IV handling, warm-up/freshness rules, parameter validation and an HTTP check proving that the dashboard leaves the paper ledger unchanged and returns WAIT. Frontend check and production build passed with no errors or warnings. Read-only authenticated Upstox checks confirmed NIFTY chains and candles, India VIX, and US 30 Dow futures quotes/candles. A separate loopback preview and separate validation ledger were used for UI verification; existing paper-account files were not edited by this feature work.

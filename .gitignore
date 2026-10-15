@@ -28,3 +28,8 @@ go.work.sum
 frontend/node_modules/
 
 data/
+
+# Local algorithm-dashboard verification outputs (screenshots remain reviewable).
+artifacts/algo-live-validation/
+artifacts/algo-live.*.log
+artifacts/global-instruments.json.gz

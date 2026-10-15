@@ -75,6 +75,7 @@ func main() {
 }
 func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/algo", a.algoDashboard)
 	mux.HandleFunc("GET /api/config", func(w http.ResponseWriter, r *http.Request) {
 		respond(w, 200, map[string]any{"mode": a.cfg.Mode, "connected": a.cfg.Token != "" || a.cfg.Mode == "demo", "pollSeconds": int(a.cfg.Poll.Seconds()), "marginPerLot": float64(a.cfg.Margin) / 100, "feePerOrder": float64(a.cfg.Fee) / 100})
 	})

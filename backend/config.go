@@ -15,6 +15,7 @@ type Config struct {
 	Token, Mode, Port, DataDir string
 	Capital, Margin, Fee       int64
 	Poll                       time.Duration
+	Algo                       AlgoConfig
 }
 
 func loadConfig() (Config, error) {
@@ -70,7 +71,8 @@ func loadConfig() (Config, error) {
 	if err != nil || port < 1024 || port > 65535 {
 		return c, fmt.Errorf("invalid PORT")
 	}
-	return c, nil
+	c.Algo, err = loadAlgoConfig()
+	return c, err
 }
 func env(k, d string) string {
 	if v := os.Getenv(k); v != "" {
