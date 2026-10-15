@@ -7,6 +7,8 @@ import "math"
 type Technicals struct {
 	Close      float64  `json:"close"`
 	VWAP       *float64 `json:"vwap"`
+	VWAPSource string   `json:"vwapSource"`
+	VWAPIssue  string   `json:"vwapIssue"`
 	EMA        *float64 `json:"ema"`
 	Supertrend *float64 `json:"supertrend"`
 	SAR        *float64 `json:"sar"`

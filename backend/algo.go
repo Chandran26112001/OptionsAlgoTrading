@@ -271,6 +271,19 @@ func (a *App) algoDashboard(w http.ResponseWriter, r *http.Request) {
 		clean, issue := completedCandles(cs, now)
 		out.TechnicalIssue = issue
 		out.Technical = technicals(clean, cfg.EMAPeriod, cfg.ATRPeriod, cfg.STMultiplier, cfg.SARStep, cfg.SARMax)
+		// NIFTY 50 is an index, so its Upstox candles can legitimately have no
+		// volume. TradingView defines its index volume as the per-minute sum of
+		// every current constituent's trading volume; use the same public method.
+		if target == "NSE_INDEX|Nifty 50" && out.Technical.VWAP == nil && len(clean) > 0 {
+			if a.cfg.Mode != "live" || a.niftyVolume == nil {
+				out.Technical.VWAPIssue = "NIFTY 50 constituent volume is available in live mode only"
+			} else if volumeCandles, err := a.niftyVolume.candles(ctx, a.provider, clean); err != nil {
+				out.Technical.VWAPIssue = "NIFTY 50 constituent volume unavailable: " + err.Error()
+			} else {
+				out.Technical = technicals(volumeCandles, cfg.EMAPeriod, cfg.ATRPeriod, cfg.STMultiplier, cfg.SARStep, cfg.SARMax)
+				out.Technical.VWAPSource = "NIFTY 50 constituent volume · 50 NSE stocks"
+			}
+		}
 		if len(clean) > 0 && now.Unix()-clean[len(clean)-1].Time > int64(cfg.MaxAge) {
 			out.TechnicalIssue = "Stale candles — values are historical"
 		}

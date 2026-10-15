@@ -162,15 +162,17 @@ func (u *Upstox) get(ctx context.Context, p string, q url.Values, ttl time.Durat
 		return errors.New("Add UPSTOX_ACCESS_TOKEN to .env and restart the server to connect live data")
 	}
 	key := p + "?" + q.Encode()
-	// Serialise/cache requests across browser tabs and workers; limits duplicate upstream polling.
+	// Keep cache and cooldown state safe across requests without serialising slow network calls.
 	u.mu.Lock()
-	defer u.mu.Unlock()
 	if c, ok := u.cache[key]; ok && time.Now().Before(c.until) {
+		u.mu.Unlock()
 		return json.Unmarshal(c.data, out)
 	}
 	if time.Now().Before(u.blockedUntil) {
+		u.mu.Unlock()
 		return errors.New("Upstox rate limit: cooling down for 30 seconds")
 	}
+	u.mu.Unlock()
 	target := url.URL{Scheme: "https", Host: "api.upstox.com", Path: p, RawQuery: q.Encode()}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
 	if err != nil {
@@ -187,7 +189,9 @@ func (u *Upstox) get(ctx context.Context, p string, q url.Values, ttl time.Durat
 		return errors.New("Upstox rejected the token or data permission; update .env and restart")
 	}
 	if res.StatusCode == 429 {
+		u.mu.Lock()
 		u.blockedUntil = time.Now().Add(30 * time.Second)
+		u.mu.Unlock()
 		return errors.New("Upstox rate limit: cooling down for 30 seconds")
 	}
 	if res.StatusCode != 200 {
@@ -207,10 +211,12 @@ func (u *Upstox) get(ctx context.Context, p string, q url.Values, ttl time.Durat
 		return fmt.Errorf("unexpected Upstox data format: %w", err)
 	}
 	if ttl > 0 {
+		u.mu.Lock()
 		if len(u.cache) > 300 {
 			u.cache = map[string]cacheEntry{}
 		}
 		u.cache[key] = cacheEntry{envelope.Data, time.Now().Add(ttl)}
+		u.mu.Unlock()
 	}
 	return nil
 }
@@ -305,7 +311,10 @@ func (u *Upstox) Candles(ctx context.Context, key string) ([]Candle, error) {
 	var raw struct {
 		Candles [][]json.RawMessage `json:"candles"`
 	}
-	err := u.get(ctx, "/v3/historical-candle/intraday/"+key+"/minutes/1", nil, 15*time.Second, &raw)
+	// The algorithm dashboard polls every three seconds. Completed candles still
+	// change only on a minute boundary, but a short cache keeps all readings
+	// aligned with the configured near-real-time snapshot cadence.
+	err := u.get(ctx, "/v3/historical-candle/intraday/"+key+"/minutes/1", nil, 3*time.Second, &raw)
 	if err != nil {
 		return nil, err
 	}

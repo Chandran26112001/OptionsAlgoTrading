@@ -176,3 +176,11 @@ func TestAlgoConfigValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestAlgoRefreshCanBeThreeSeconds(t *testing.T) {
+	t.Setenv("ALGO_REFRESH_SECONDS", "3")
+	cfg, err := loadAlgoConfig()
+	if err != nil || cfg.Refresh != 3 {
+		t.Fatalf("three-second refresh rejected: %+v %v", cfg, err)
+	}
+}

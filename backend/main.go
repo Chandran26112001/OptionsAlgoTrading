@@ -25,10 +25,11 @@ import (
 var web embed.FS
 
 type App struct {
-	cfg      Config
-	engine   *Engine
-	provider Provider
-	csrf     string
+	cfg         Config
+	engine      *Engine
+	provider    Provider
+	niftyVolume *NiftyVolumeSource
+	csrf        string
 }
 
 func main() {
@@ -45,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer cleanup()
-	a := App{cfg: cfg, engine: e, provider: p}
+	a := App{cfg: cfg, engine: e, provider: p, niftyVolume: newNiftyVolumeSource()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() {

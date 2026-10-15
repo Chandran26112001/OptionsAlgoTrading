@@ -70,3 +70,39 @@ func TestAlgoLiveData(t *testing.T) {
 		t.Logf("Latest option candle volume: %v", candles[len(candles)-1].Volume)
 	}
 }
+
+// Opt-in verification of the NIFTY 50 index-volume definition used for VWAP.
+// It performs only public-list and allowlisted Upstox GET requests.
+func TestNiftyConstituentVWAPLive(t *testing.T) {
+	if os.Getenv("OPTIONDESK_VERIFY_LIVE") != "1" {
+		t.Skip("explicit live verification only")
+	}
+	if err := os.Chdir(".."); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir("backend")
+	cfg, err := loadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := newUpstox(cfg.Token)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+	indexCandles, err := p.Candles(ctx, "NSE_INDEX|Nifty 50")
+	if err != nil {
+		t.Fatal(err)
+	}
+	completed, issue := completedCandles(indexCandles, time.Now())
+	if issue != "" {
+		t.Fatal(issue)
+	}
+	volumeCandles, err := newNiftyVolumeSource().candles(ctx, p, completed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tech := technicals(volumeCandles, 20, 10, 3, .02, .2)
+	if tech.VWAP == nil {
+		t.Fatal("complete constituent volume did not produce VWAP")
+	}
+	t.Logf("NIFTY 50 constituent-volume VWAP: %.2f from %d completed candles", *tech.VWAP, len(volumeCandles))
+}

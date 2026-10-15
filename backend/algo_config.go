@@ -33,7 +33,7 @@ func loadAlgoConfig() (AlgoConfig, error) {
 		{"ALGO_EMA_PERIOD", "20", &c.EMAPeriod, 2, 300},
 		{"ALGO_SUPERTREND_ATR_PERIOD", "10", &c.ATRPeriod, 2, 100},
 		{"ALGO_MAX_DATA_AGE_SECONDS", "180", &c.MaxAge, 60, 900},
-		{"ALGO_REFRESH_SECONDS", "15", &c.Refresh, 15, 300},
+		{"ALGO_REFRESH_SECONDS", "3", &c.Refresh, 3, 300},
 	} {
 		n, err := strconv.Atoi(env(v.k, v.d))
 		if err != nil || n < v.min || n > v.max {
