@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { Activity, ArrowDownRight, ArrowUpRight, BarChart3, CirclePause, Globe2, Layers, RefreshCw, ShieldCheck, SlidersHorizontal } from '@lucide/svelte';
+  import TechnicalChart from './TechnicalChart.svelte';
   export let underlying, underlyingName, expiry, selectedKey, contracts = [], expiries = [];
   export let chooseUnderlying, changeExpiry, selectLeg;
   let data = null, error = '', loading = false, identity = '', controller, revision = 0, lastFetch = 0, clock = Date.now();
@@ -84,6 +85,11 @@
         {/each}
       </div>
       <div class="technical-footer"><span>Last completed close <strong>{fmt(data.technical.close || null)}</strong> · {when(data.technical.at)} IST</span><span>{data.technical.count} candles · no buy / sell rules applied</span></div>
+      {#if data.technicalChart?.length}
+        <div class="technical-chart-heading"><div><h4>{data.config.target === 'underlying' ? underlyingName : currentContract?.trading_symbol} · 1-minute chart</h4><p>Completed candles with the same indicator values shown above.</p></div><span>LIVE SNAPSHOT · {data.config.refreshSeconds}s</span></div>
+        <TechnicalChart points={data.technicalChart} identity={`${data.targetKey}:${data.technicalChart[data.technicalChart.length - 1]?.time}`}/>
+        <div class="technical-chart-footer"><span>Pan or zoom to inspect the session · IST</span><span>Charts by TradingView</span></div>
+      {/if}
     </section>
     <div class="algo-bottom"><span><ShieldCheck size={14}/> Observation only. Your paper account is unchanged.</span><span><SlidersHorizontal size={13}/> Parameters in .env · restart to apply</span></div>
   {/if}
@@ -94,4 +100,5 @@
   @media(min-width:1600px){.algo-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.algo-card{padding:21px 18px}.card-top{gap:7px}.card-top .algo-kicker{letter-spacing:.7px;font-size:7px}.compare-values strong{font-size:25px}.trend-value>strong{font-size:26px}.trend-baseline{flex-wrap:wrap}.comparison-result{flex-wrap:wrap}.technical-grid{padding-block:15px 30px}}
   @media(max-width:1100px){.algo-context{gap:12px;flex-wrap:wrap}.algo-context label{min-width:110px}.contract-select{min-width:180px!important}.technical-grid{grid-template-columns:1fr 1fr;gap:25px}.technical-item:nth-child(3){padding-left:0}.technical-item:nth-child(2){border:0}.signal-panel{padding:23px 20px}.signal-main{gap:13px}.signal-icon{display:none}.algo-card{padding:20px}.algo-intro h2{font-size:23px}}
   @media(max-width:620px){.algo-grid{grid-template-columns:1fr}.algo-intro{align-items:flex-start}.algo-intro h2{font-size:21px;line-height:1.3}.algo-intro p{font-size:10px;line-height:1.7}.algo-refresh{font-size:0;padding:10px}.algo-context{padding:15px}.algo-context label{flex:1;min-width:100px}.contract-select{flex-basis:calc(100% - 90px)!important}.atm-chip{padding:7px 10px}.signal-panel{gap:10px;padding:20px 16px}.signal-title{font-size:27px}.signal-title>span{display:block;width:fit-content;margin:8px 0;line-height:1.5;font-size:9px}.signal-main p{font-size:10px}.signal-coverage{min-width:70px;padding-left:10px}.signal-coverage>strong{font-size:25px}.signal-coverage small{font-size:5px;line-height:1.7}.algo-meta{font-size:8px;flex-wrap:wrap}.technical-heading{padding:20px 17px;gap:10px}.technical-heading p{font-size:9px}.technical-grid{padding:4px 17px 20px;gap:25px 0}.technical-item{padding:0 10px}.technical-item>strong{font-size:21px}.technical-item small{font-size:8px}.technical-item p{font-size:7px}.technical-footer,.algo-bottom{flex-direction:column;gap:7px}.technical-footer{padding:12px 17px;font-size:8px}.technical-heading .data-tag{font-size:6px}.algo-bottom{font-size:8px}.card-top .algo-kicker{font-size:8px}}
+  .technical-chart-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:23px 24px 14px}.technical-chart-heading h4{font-size:13px;color:#49633b;font-weight:500}.technical-chart-heading p{font-size:9px;color:#94a287;margin-top:5px}.technical-chart-heading>span{font-size:8px;letter-spacing:.8px;color:#8d9e7d;border:1px solid #e4eadb;background:#fafbf7;padding:5px 7px;border-radius:4px;white-space:nowrap}.technical-chart-footer{border-top:1px solid #e9eee1;background:#fafbf7;padding:11px 24px;display:flex;justify-content:space-between;gap:10px;font-size:8px;color:#97a38a}@media(max-width:620px){.technical-chart-heading{padding:18px 17px 12px;align-items:flex-start}.technical-chart-heading>span{font-size:6px}.technical-chart-footer{padding:10px 17px;font-size:7px}}
 </style>

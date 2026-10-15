@@ -35,24 +35,25 @@ type Trend struct {
 	Issue      string    `json:"issue"`
 }
 type AlgoDashboard struct {
-	Config         AlgoConfig `json:"config"`
-	Mode           string     `json:"mode"`
-	ReceivedAt     time.Time  `json:"receivedAt"`
-	Underlying     string     `json:"underlying"`
-	Option         string     `json:"option"`
-	Expiry         string     `json:"expiry"`
-	TargetKey      string     `json:"targetKey"`
-	ATM            float64    `json:"atm"`
-	OI             Comparison `json:"oi"`
-	IV             Comparison `json:"iv"`
-	VIX            Trend      `json:"vix"`
-	Dow            Trend      `json:"dow"`
-	Technical      Technicals `json:"technical"`
-	TechnicalIssue string     `json:"technicalIssue"`
-	ChainIssue     string     `json:"chainIssue"`
-	MarketStatus   string     `json:"marketStatus"`
-	FinalCall      string     `json:"finalCall"`
-	FinalReason    string     `json:"finalReason"`
+	Config         AlgoConfig       `json:"config"`
+	Mode           string           `json:"mode"`
+	ReceivedAt     time.Time        `json:"receivedAt"`
+	Underlying     string           `json:"underlying"`
+	Option         string           `json:"option"`
+	Expiry         string           `json:"expiry"`
+	TargetKey      string           `json:"targetKey"`
+	ATM            float64          `json:"atm"`
+	OI             Comparison       `json:"oi"`
+	IV             Comparison       `json:"iv"`
+	VIX            Trend            `json:"vix"`
+	Dow            Trend            `json:"dow"`
+	Technical      Technicals       `json:"technical"`
+	TechnicalChart []TechnicalPoint `json:"technicalChart"`
+	TechnicalIssue string           `json:"technicalIssue"`
+	ChainIssue     string           `json:"chainIssue"`
+	MarketStatus   string           `json:"marketStatus"`
+	FinalCall      string           `json:"finalCall"`
+	FinalReason    string           `json:"finalReason"`
 }
 
 func compareChain(rows []ChainRow, wings int, iv bool) Comparison {
@@ -271,6 +272,7 @@ func (a *App) algoDashboard(w http.ResponseWriter, r *http.Request) {
 		clean, issue := completedCandles(cs, now)
 		out.TechnicalIssue = issue
 		out.Technical = technicals(clean, cfg.EMAPeriod, cfg.ATRPeriod, cfg.STMultiplier, cfg.SARStep, cfg.SARMax)
+		out.TechnicalChart = technicalSeries(clean, cfg.EMAPeriod, cfg.ATRPeriod, cfg.STMultiplier, cfg.SARStep, cfg.SARMax)
 		// NIFTY 50 is an index, so its Upstox candles can legitimately have no
 		// volume. TradingView defines its index volume as the per-minute sum of
 		// every current constituent's trading volume; use the same public method.
@@ -281,6 +283,7 @@ func (a *App) algoDashboard(w http.ResponseWriter, r *http.Request) {
 				out.Technical.VWAPIssue = "NIFTY 50 constituent volume unavailable: " + err.Error()
 			} else {
 				out.Technical = technicals(volumeCandles, cfg.EMAPeriod, cfg.ATRPeriod, cfg.STMultiplier, cfg.SARStep, cfg.SARMax)
+				out.TechnicalChart = technicalSeries(volumeCandles, cfg.EMAPeriod, cfg.ATRPeriod, cfg.STMultiplier, cfg.SARStep, cfg.SARMax)
 				out.Technical.VWAPSource = "NIFTY 50 constituent volume · 50 NSE stocks"
 			}
 		}

@@ -83,6 +83,20 @@ func TestTechnicalsKnownValues(t *testing.T) {
 	if got.SAR == nil || math.Abs(*got.SAR-8.32) > 1e-9 {
 		t.Fatalf("SAR %v", got.SAR)
 	}
+	points := technicalSeries(cs, 3, 2, 1, .02, .2)
+	last := points[len(points)-1]
+	if len(points) != len(cs) || last.VWAP == nil || last.EMA == nil || last.Supertrend == nil || last.SAR == nil || math.Abs(*last.VWAP-*got.VWAP) > 1e-9 || math.Abs(*last.EMA-*got.EMA) > 1e-9 || math.Abs(*last.Supertrend-*got.Supertrend) > 1e-9 || math.Abs(*last.SAR-*got.SAR) > 1e-9 {
+		t.Fatalf("chart series diverged from technical card: %#v", last)
+	}
+	same := func(a, b *float64) bool {
+		return a == nil && b == nil || a != nil && b != nil && math.Abs(*a-*b) < 1e-9
+	}
+	for i, point := range points {
+		want := technicals(cs[:i+1], 3, 2, 1, .02, .2)
+		if !same(point.VWAP, want.VWAP) || !same(point.EMA, want.EMA) || !same(point.Supertrend, want.Supertrend) || !same(point.SAR, want.SAR) {
+			t.Fatalf("chart point %d diverged from technical card: %#v %#v", i, point, want)
+		}
+	}
 	for i := range cs {
 		cs[i].Volume = 0
 	}
@@ -144,6 +158,9 @@ func TestAlgoReadOnlyAndAlwaysWait(t *testing.T) {
 	}
 	if result.FinalCall != "WAIT" || result.FinalReason == "" || result.Mode != "demo" {
 		t.Fatal("undefined rules produced actionable signal")
+	}
+	if len(result.TechnicalChart) != result.Technical.Count {
+		t.Fatalf("technical chart does not match completed-candle count: %d %d", len(result.TechnicalChart), result.Technical.Count)
 	}
 	if !reflect.DeepEqual(before, e.Snapshot()) {
 		t.Fatal("dashboard modified ledger")
